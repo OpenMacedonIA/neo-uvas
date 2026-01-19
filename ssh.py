@@ -1,4 +1,4 @@
-from modules.skills import BaseSkill
+from modules.BlueberrySkills import BaseSkill
 
 class SSHSkill(BaseSkill):
     def connect(self, command, response, **kwargs):
