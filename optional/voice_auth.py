@@ -34,7 +34,7 @@ class VoiceAuthSkill:
             self.load_profiles()
             self.load_permissions()
             self.enabled = True
-            app_logger.info("✅ VoiceAuthSkill initialized (Optional).")
+            app_logger.info("[OK] VoiceAuthSkill initialized (Optional).")
         else:
             app_logger.warning("VoiceAuthSkill disabled due to missing dependencies.")
 
