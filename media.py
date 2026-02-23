@@ -54,15 +54,15 @@ class MediaSkill(BaseSkill):
             self.speak("Dime qué vídeo poner y en qué dispositivo. Ejemplo: Pon el vídeo de gatitos en la tele.")
             return
 
-        # Simple parsing logic
-        # "pon el vídeo X en Y" -> X is media, Y is device
+        # Lógica de análisis simple
+        # "pon el vídeo X en Y" -> X es multimedia, Y es dispositivo
         media_part = parts[0].replace("pon el vídeo", "").replace("pon un vídeo", "").strip()
         device_name = parts[1].strip()
         
-        # For demo purposes, if media_part is not a URL, use a sample Big Buck Bunny
+        # Para propósitos de demostración, si media_part no es una URL, usa un vídeo de ejemplo Big Buck Bunny
         media_url = media_part
         if not media_url.startswith("http"):
-             # Sample video for testing
+             # Vídeo de ejemplo para pruebas
              media_url = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
              self.speak(f"Como no me has dado una URL, pondré Big Buck Bunny en {device_name}.")
         else:
@@ -76,7 +76,7 @@ class MediaSkill(BaseSkill):
         if not self.core.cast_manager:
             return
 
-        # Check if a specific device is mentioned
+        # Comprobar si se menciona un dispositivo específico
         device_name = None
         # Heurística simple: si el comando contiene un nombre de dispositivo conocido
         known_devices = self.core.cast_manager.get_devices()

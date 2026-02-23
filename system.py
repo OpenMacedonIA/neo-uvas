@@ -6,7 +6,7 @@ class SystemSkill(BaseSkill):
         if self.core.sysadmin_manager:
             status = self.core.sysadmin_manager.get_full_status()
             
-            # Add Battery if applicable
+            # Añadir batería si aplica
             battery = self.core.sysadmin_manager.get_battery_status()
             if battery != "No detectada":
                 status += f" Batería al {battery}."
@@ -30,8 +30,8 @@ class SystemSkill(BaseSkill):
             count = len(lines)
             if count > 0:
                 self.speak(f"Hay {count} servicios corriendo en este momento.")
-                # Optional: Read first few? "Como ssh, docker..."
-                # Extract names: 'service.name.service   loaded active running   Description'
+                # Opcional: ¿Leer primeros? "Como ssh, docker..."
+                # Extraer nombres: 'service.name.service   loaded active running   Description'
                 examples = []
                 for line in lines[:3]:
                     parts = line.split()
@@ -47,11 +47,11 @@ class SystemSkill(BaseSkill):
             self.speak("No pude listar los servicios.")
 
     def apagar(self, response, **kwargs):
-        # Biometric Check (Alpha)
+        # Comprobación Biométrica (Alpha)
         if hasattr(self.core, 'biometrics_manager'):
             if self.core.biometrics_manager.is_voice_auth_enabled():
                 self.speak("Verificando autorización por huella de voz...")
-                # Simulate verification process
+                # Simular proceso de verificación
                 if self.core.biometrics_manager.verify_voice(None):
                     self.speak("Identidad confirmada.")
                 else:

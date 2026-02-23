@@ -21,22 +21,22 @@ class SSHSkill(BaseSkill):
             self.speak("Debes especificar 'en [servidor]'. Ejemplo: Lista archivos en Ubuntu.")
             return
 
-        # Split instruction and target
+        # Dividir instrucción y objetivo
         parts = command.split(" en ")
-        # Heuristic: The last part is likely the server, everything before is instruction
+        # Heurística: la última parte probablemente sea el servidor, todo lo anterior es la instrucción
         alias = parts[-1].strip()
         instruction = " en ".join(parts[:-1]).replace("ejecuta", "").strip()
 
-        # Check if server exists before bothering Mango
+        # Comprobar si existe el servidor antes de consultar a Mango
         if alias not in self.core.ssh_manager.get_servers_list():
-            # Try fuzzy match? For now strict
+            # ¿Intentar coincidencia difusa? Por ahora estricta
             self.speak(f"No conozco el servidor '{alias}'.")
             return
 
-        # Use Mango to generate the command
+        # Usar Mango para generar el comando
         self.speak(f"Pensando comando para '{instruction}' en {alias}...")
         
-        # Context Injection: None mostly, or maybe "remote server" hint
+        # Inyección de contexto: Ninguno principalmente, o tal vez una pista de "remote server"
         mango_prompt = f"Contexto: Remote Linux Server | Instrucción: {instruction}"
         
         generated_cmd, confidence = self.core.mango_manager.infer(mango_prompt)
@@ -45,17 +45,17 @@ class SSHSkill(BaseSkill):
             self.speak("No estoy seguro de cómo traducir esa orden a un comando.")
             return
             
-        # Confirmation (Voice Safety)
+        # Confirmación (Seguridad por Voz)
         self.speak(f"Voy a ejecutar: '{generated_cmd}' en {alias}. ¿Procedo?")
         
-        # We need to block/wait for confirmation. 
-        # Since skills are sync in current arch, we can use a small hack or 
-        # (better) set a pending state in core and return.
-        # But for this iteration, let's assume the user wants direct execution for simplicity 
-        # OR we implement the pending loop.
+        # Necesitamos bloquear/esperar confirmación. 
+        # Ya que las habilidades son síncronas en la arq actual, podemos usar un pequeño parche o 
+        # (mejor) establecer un estado pendiente en core y regresar.
+        # Pero para esta iteración, asumamos que el usuario quiere ejecución directa por simplicidad 
+        # O implementamos el bucle pendiente.
         
         # User requested: "La skill recoge la salida y la ejecuta"
-        # Let's execute directly but announce it carefully.
+        # Ejecutemos directamente pero anunciémoslo con cuidado.
         
         self.speak(f"Ejecutando...")
         success, output = self.core.ssh_manager.execute(alias, generated_cmd)

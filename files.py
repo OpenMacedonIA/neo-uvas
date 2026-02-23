@@ -11,7 +11,7 @@ class FilesSkill(BaseSkill):
         self.last_scan = None
         self.last_scan = None
         
-        # Force initial scan on startup (in background)
+        # Forzar escaneo inicial al inicio (en segundo plano)
         threading.Thread(target=self.run_indexing, daemon=True).start()
         
         self.schedule_scan()
@@ -22,7 +22,7 @@ class FilesSkill(BaseSkill):
             config = self.core.skills_config.get('files', {}).get('config', {})
             if config.get('enable_indexing', False):
                 interval = config.get('scan_interval', 24) * 3600
-                # Simple timer loop in a thread
+                # Bucle de temporizador simple en un hilo
                 threading.Thread(target=self._scan_loop, args=(interval,), daemon=True).start()
         except Exception as e:
             self.core.app_logger.error(f"Error scheduling scan: {e}")
@@ -43,7 +43,7 @@ class FilesSkill(BaseSkill):
             paths = config.get('scan_paths', [])
             extensions = config.get('scan_types', [])
             
-            # Clear old index? Maybe partial updates are better, but for now full re-index is safer
+            # ¿Limpiar índice antiguo? Tal vez las actualizaciones parciales sean mejores, pero por ahora reindexar todo es más seguro
             self.core.db.clear_file_index()
             
             count = 0
@@ -67,7 +67,7 @@ class FilesSkill(BaseSkill):
                                 )
                                 count += 1
                             except Exception as e:
-                                pass # Permission error etc
+                                pass # Error de permisos, etc.
             
             self.core.app_logger.info(f"Scan complete. Indexed {count} files.")
             self.last_scan = datetime.now()
@@ -89,12 +89,12 @@ class FilesSkill(BaseSkill):
         # "busca el archivo [nombre] en [ruta]"
         # "busca el archivo [nombre]" (default root)
         
-        # Check if NLU extracted the filename (Padatious)
+        # Comprobar si NLU extrajo el nombre del archivo (Padatious)
         target = kwargs.get('file_name')
         
         if not target:
-            # Fallback to manual extraction (Legacy/Regex)
-            # Clean command from triggers
+            # Respaldo a extracción manual (Legado/Regex)
+            # Limpiar comando de disparadores
             prefixes = [
                 "puedes buscar un archivo que se llama",
                 "busca una imagen llamada",
@@ -110,7 +110,7 @@ class FilesSkill(BaseSkill):
                     target = target[len(prefix):].strip()
                     break
         
-        # Normalize phonetic extensions (Always apply this)
+        # Normalizar extensiones fonéticas (Aplicar siempre esto)
         replacements = {
             " punto ": ".",
             "punto ": ".",
@@ -141,13 +141,13 @@ class FilesSkill(BaseSkill):
             self.speak("¿Qué archivo quieres buscar?")
             return
 
-        # Try Database Search First
+        # Probar búsqueda en base de datos primero
         config = self.core.skills_config.get('files', {}).get('config', {})
         if config.get('enable_indexing', False) and not path:
             self.speak(f"Buscando '{target}' en mi índice...")
             results = self.core.db.search_files_index(target)
             if results:
-                # Save context
+                # Guardar contexto
                 self.core.context['last_found_file'] = results[0]['path']
                 
                 if len(results) == 1:
@@ -158,8 +158,8 @@ class FilesSkill(BaseSkill):
             else:
                 self.speak("No estaba en mi índice, buscando en el sistema...")
 
-        # Fallback to live search
-        # Default to user home instead of root for performance and relevance
+        # Respaldo a búsqueda en vivo
+        # Por defecto en la carpeta del usuario en lugar de root por rendimiento y relevancia
         search_path = path if path else os.path.expanduser("~")
         self.speak(f"{response} Buscando '{target}' en {search_path}...")
         success, results = self.core.file_manager.search_files(target, search_path)

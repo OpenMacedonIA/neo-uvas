@@ -5,15 +5,15 @@ import re
 
 class VisualSkill(BaseSkill):
     """
-    Smart file viewer skill that detects file types and opens them appropriately.
-    Works in conjunction with AI-generated commands (Pinot) that find files.
+    Skill de visor inteligente de archivos que detecta tipos de archivo y los abre adecuadamente.
+    Funciona junto con comandos generados por IA (Pinot) que buscan archivos.
     """
     
     def __init__(self, core):
         super().__init__("VisualSkill")
         self.core = core
         
-        # Supported file types and their handlers
+        # Tipos de archivo soportados y sus manejadores
         self.SUPPORTED_TYPES = {
             'pdf': {'apps': ['evince', 'okular', 'xpdf'], 'web': False},
             'jpg': {'apps': ['feh', 'eog'], 'web': True},
@@ -36,25 +36,25 @@ class VisualSkill(BaseSkill):
             'css': {'apps': None, 'web': True},
         }
         
-        # File types to exclude
+        # Tipos de archivo a excluir
         self.EXCLUDED_TYPES = ['docx', 'pptx', 'odt', 'xlsx', 'ods', 'zip', 'tar', 'gz']
         
-        # Regex to extract file paths from command output
+        # Expresión regular para extraer rutas de archivo de la salida del comando
         self.FILE_PATH_REGEX =re.compile(r'(/[^\s]+\.\w+)')
         
     def show_file(self, command, response, **kwargs):
         """
-        Show the last found file in appropriate viewer.
-        Triggered by: "muéstramelo", "ábrelo", "quiero verlo"
+        Muestra el último archivo encontrado en el visor adecuado.
+        Activado por: "muéstramelo", "ábrelo", "quiero verlo"
         """
-        # Get last found file from context
+        # Obtener el último archivo encontrado del contexto
         last_file = None
         
-        # Try to get from core context
+        # Intentar obtener del contexto del core
         if hasattr(self.core, 'context'):
             last_file = self.core.context.get('last_found_file')
         
-        # If not in context, try to extract from last command output
+        # Si no está en contexto, intentar extraer de la salida del último comando
         if not last_file and hasattr(self.core, 'last_command_output'):
             paths = self.FILE_PATH_REGEX.findall(self.core.last_command_output)
             if paths:
@@ -62,41 +62,41 @@ class VisualSkill(BaseSkill):
         
         if not last_file:
             self.speak("No tengo ningún archivo en memoria para mostrar.")
-            return "No file in memory"
+            return "No hay archivo en memoria"
         
         if not os.path.exists(last_file):
             self.speak("El archivo que buscas ya no existe.")
-            return "File not found"
+            return "Archivo no encontrado"
         
-        # Detect file type
+        # Detectar tipo de archivo
         ext = last_file.split('.')[-1].lower()
         
         if ext in self.EXCLUDED_TYPES:
             self.speak(f"No puedo mostrar archivos {ext}. Usa LibreOffice o la aplicación correspondiente.")
-            return "File type not supported"
+            return "Tipo de archivo no soportado"
         
         if ext not in self.SUPPORTED_TYPES:
             self.speak("Tipo de archivo no soportado para visualización.")
-            return "Unsupported type"
+            return "Tipo no soportado"
         
-        # Get config for this file type
+        # Obtener configuración para este tipo de archivo
         config = self.SUPPORTED_TYPES[ext]
         
         self.speak(f"Mostrando {os.path.basename(last_file)}...")
         
         if config['web']:
-            # Show in web UI with PIP mode
+            # Mostrar en la interfaz web con modo PIP
             self._show_in_web_ui(last_file, ext)
         else:
-            # Open external viewer
+            # Abrir visor externo
             self._open_external_viewer(last_file, config['apps'])
         
-        return f"Opening {last_file}"
+        return f"Abriendo {last_file}"
     
     def _show_in_web_ui(self, filepath, filetype):
-        """Open file in web UI viewer with PIP mode"""
+        """Abre archivo en el visor de la interfaz web con modo PIP"""
         try:
-            # Emit to web UI to switch to PIP mode
+            # Emitir a la interfaz web para cambiar a modo PIP
             if hasattr(self.core, 'bus'):
                 self.core.bus.emit('ui:pip_mode', {
                     'enabled': True,
@@ -105,7 +105,7 @@ class VisualSkill(BaseSkill):
                     'action': 'show'
                 })
             
-            # Also emit via web admin socketio if available
+            # También emitir a través de web admin socketio si está disponible
             try:
                 import modules.web_admin as web_admin
                 if hasattr(web_admin, 'socketio'):
@@ -118,30 +118,30 @@ class VisualSkill(BaseSkill):
             except:
                 pass
             
-            self.core.app_logger.info(f"📺 Showing {filepath} in web UI (PIP mode)")
+            self.core.app_logger.info(f" Showing {filepath} in web UI (PIP mode)")
         except Exception as e:
             self.core.app_logger.error(f"Error showing file in web UI: {e}")
             self.speak("Error al mostrar el archivo en la interfaz web.")
     
     def _open_external_viewer(self, filepath, apps):
-        """Open file in external application"""
+        """Abre archivo en aplicación externa"""
         if not apps:
             self.speak("No hay visor disponible para este tipo de archivo.")
             return
         
-        # Try each app until one works
+        # Probar cada aplicación hasta que una funcione
         for app in apps:
             try:
-                # Check if app is installed
+                # Comprobar si la aplicación está instalada
                 result = subprocess.run(['which', app], capture_output=True, text=True)
                 if result.returncode == 0:
-                    # App found, open file
+                    # Aplicación encontrada, abrir archivo
                     subprocess.Popen([app, filepath], 
                                    stdout=subprocess.DEVNULL, 
                                    stderr=subprocess.DEVNULL)
-                    self.core.app_logger.info(f"📄 Opened {filepath} with {app}")
+                    self.core.app_logger.info(f" Opened {filepath} with {app}")
                     
-                    # Activate PIP mode for external viewers too
+                    # Activar modo PIP también para visores externos
                     try:
                         import modules.web_admin as web_admin
                         if hasattr(web_admin, 'socketio'):
@@ -160,23 +160,23 @@ class VisualSkill(BaseSkill):
                 self.core.app_logger.debug(f"Failed to open with {app}: {e}")
                 continue
         
-        # No app worked
+        # Ninguna aplicación funcionó
         self.speak(f"No pude encontrar ningún visor instalado. Necesitas instalar: {', '.join(apps)}")
     
     def close_viewer(self, command, response, **kwargs):
         """
-        Close the file viewer and return to normal UI.
-        Triggered by: "cierra la pantalla", "cierra el visor", "vale perfecto"
+        Cierra el visor de archivos y vuelve a la interfaz normal.
+        Activado por: "cierra la pantalla", "cierra el visor", "vale perfecto"
         """
         try:
-            # Emit to web UI to exit PIP mode
+            # Emitir a la interfaz web para salir del modo PIP
             if hasattr(self.core, 'bus'):
                 self.core.bus.emit('ui:pip_mode', {
                     'enabled': False,
                     'action': 'close'
                 })
             
-            # Also via web admin
+            # También vía web admin
             try:
                 import modules.web_admin as web_admin
                 if hasattr(web_admin, 'socketio'):
@@ -188,22 +188,22 @@ class VisualSkill(BaseSkill):
                 pass
             
             self.speak("Cerrando visualización.")
-            self.core.app_logger.info("🔚 Closing visual viewer, exiting PIP mode")
-            return "Closed viewer"
+            self.core.app_logger.info(" Closing visual viewer, exiting PIP mode")
+            return "Visor cerrado"
         except Exception as e:
             self.core.app_logger.error(f"Error closing viewer: {e}")
-            return "Error closing"
+            return "Error al cerrar"
     
     def extract_file_from_output(self, command_output):
         """
-        Extract file paths from command output.
-        This can be called by NeoCore after executing Pinot-generated commands.
+        Extrae rutas de archivos de la salida de los comandos.
+        Esto puede ser llamado por NeoCore después de ejecutar comandos generados por Pinot.
         """
         paths = self.FILE_PATH_REGEX.findall(command_output)
         if paths:
-            # Store in context for later use
+            # Almacenar en contexto para uso posterior
             if hasattr(self.core, 'context'):
                 self.core.context['last_found_file'] = paths[0]
-                self.core.context['all_found_files'] = paths[:5]  # Store up to 5
+                self.core.context['all_found_files'] = paths[:5]  # Almacenar hasta 5
             return paths[0]
         return None

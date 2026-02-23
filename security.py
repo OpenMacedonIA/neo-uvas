@@ -182,13 +182,13 @@ class SecuritySkill(BaseSkill):
         """
         status = []
         
-        # Check antivirus
+        # Comprobar antivirus
         if self.virus_scanner and self.virus_scanner.clamav_available:
             status.append("Antivirus ClamAV activo")
         else:
             status.append("Antivirus no disponible")
         
-        # Check WatermelonGuard
+        # Comprobar WatermelonGuard
         if hasattr(self.core, 'guard') and self.core.guard and self.core.guard.running:
             status.append("Sistema de Detección de Intrusiones activo")
             sig_count = len(self.core.guard.signatures) if self.core.guard.signatures else 0
@@ -196,7 +196,7 @@ class SecuritySkill(BaseSkill):
         else:
             status.append("Sistema de Detección inactivo")
         
-        # Quarantine
+        # Cuarentena
         if self.virus_scanner:
             quarantined = len(self.virus_scanner.list_quarantine())
             if quarantined > 0:

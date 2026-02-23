@@ -20,7 +20,7 @@ class NetworkSkill(BaseSkill):
         if not target:
             return "No especificaste a qué hacer ping."
             
-        # Check for aliases
+        # Comprobar alias
         try:
             skills_config = self.core.skills_config
             if skills_config:

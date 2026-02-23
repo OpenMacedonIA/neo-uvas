@@ -55,7 +55,7 @@ class OrganizerSkill(BaseSkill):
             self.speak("No he podido entender la hora de la alarma.")
 
     def consultar_recordatorios_dia(self, command, response, **kwargs):
-        # Placeholder implementation
+        # Implementación de marcador de posición
         self.speak("Aquí tienes tus recordatorios (simulado).")
 
     def consultar_alarmas(self, command, response, **kwargs):
@@ -102,7 +102,7 @@ class OrganizerSkill(BaseSkill):
         """Consulta citas para hoy."""
         from datetime import date
         today = date.today()
-        # Access calendar_manager via core
+        # Acceder a calendar_manager a través de core
         if hasattr(self.core, 'calendar_manager'):
             events = self.core.calendar_manager.get_events_for_day(today.year, today.month, today.day)
             

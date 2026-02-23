@@ -11,15 +11,15 @@ class FinderSkill:
         self.name = "finder"
         self.cache_file = "data/finder_history.json"
         
-        # Load Configs
+        # Cargar configuraciones
         self.sys_logs = load_json_data("config/sys_logs.json")
         self.user_docs = load_json_data("config/user_docs.json")
         
-        # Ensure data dir
+        # Asegurar directorio de datos
         if not os.path.exists("data"):
             os.makedirs("data")
             
-        # Optimize based on OS
+        # Optimizar basado en OS
         if self.core.sysadmin_manager:
             try:
                 info = self.core.sysadmin_manager.get_system_info()
@@ -30,10 +30,10 @@ class FinderSkill:
 
     def execute(self, command_text, intent_data):
         """
-        Routes intent to specific handlers:
-        - system_find_file: Search logic
-        - visual_show: View logic
-        - visual_close: Close UI
+        Enruta la intención a manejadores específicos:
+        - system_find_file: Lógica de búsqueda
+        - visual_show: Lógica de vista
+        - visual_close: Cerrar UI
         """
         intent_name = intent_data.get('name')
         
@@ -48,11 +48,11 @@ class FinderSkill:
 
     def handle_find(self, text):
         """Logic to find logs or documents."""
-        # 1. Check Keywords for System Logs
+        # 1. Chequear Palabras Clave para Logs de Sistema
         # text: "buscame el log de apache"
         for key, paths in self.sys_logs.items():
             if key in text.lower():
-                # Check existance
+                # Verificar existencia
                 valid_path = None
                 for p in paths:
                     if os.path.exists(p):
@@ -65,7 +65,7 @@ class FinderSkill:
                 else:
                     return f"No encuentro el log de {key} en las rutas esperadas."
 
-        # 2. Check User Docs Shortcuts
+        # 2. Chequear Atajos a Documentos de Usuario
         # text: "busca el manual de instalacion"
         if "manuals" in self.user_docs:
             for key, path in self.user_docs["manuals"].items():
@@ -74,30 +74,30 @@ class FinderSkill:
                          self._cache_result(path, "pdf")
                          return f"He encontrado el manual '{key}'. Di 'abrelo' para ver."
 
-        # 3. Fuzzy Search (Mango / Find)
-        # Fallback to general search if no intent matched above
-        # Extract plausible filename from text? Or ask Mango for the command?
-        # Let's ask Mango to generate a 'find' command for us, or do a simple python walk.
-        # User requirement: "buscame un archivo llamado borrador.pdf"
+        # 3. Búsqueda Difusa (Mango / Find)
+        # Respaldo a búsqueda general si ninguna intención coincidió arriba
+        # ¿Extraer nombre de archivo plausible del texto? ¿O pedir a Mango que genere el comando?
+        # Pidámosle a Mango que nos genere un comando 'find', o hagamos un simple recorrido de python.
+        # Requerimiento de usuario: "buscame un archivo llamado borrador.pdf"
         
         search_term = self._extract_search_term(text)
         if search_term:
-             # Sanitize
-             search_term = search_term.replace(" ", "*") # Fuzzy spaces
+             # Sanitizar
+             search_term = search_term.replace(" ", "*") # Espacios difusos
              
-             # Locate command (fastest)
+             # Comando Locate (el más rápido)
              try:
                  cmd = ["locate", "-i", search_term]
                  result = subprocess.run(cmd, capture_output=True, text=True)
                  paths = result.stdout.strip().split('\n')
-                 paths = [p for p in paths if p] # filter empty
+                 paths = [p for p in paths if p] # filtrar vacíos
                  
                  if paths:
-                     # Filter by safety (images, docs, audio)
+                     # Filtrar por seguridad (imágenes, docs, audio)
                      safe_paths = [p for p in paths if self._is_safe_ext(p)]
                      
                      if safe_paths:
-                         best = safe_paths[0] # Take first match
+                         best = safe_paths[0] # Tomar primera coincidencia
                          ftype = "audio" if self._is_audio(best) else "doc"
                          self._cache_result(best, ftype)
                          return f"Encontré {os.path.basename(best)}. ¿Quieres verlo?"
@@ -107,7 +107,7 @@ class FinderSkill:
         return "No he encontrado nada con ese nombre."
 
     def handle_show(self, text):
-        """Displays the cached file."""
+        """Muestra el archivo cacheado."""
         cached = self._get_cached_result()
         if not cached:
             return "No tengo ningún archivo en memoria reciente."
@@ -115,30 +115,30 @@ class FinderSkill:
         filepath = cached['path']
         ftype = cached['type']
         
-        # Validate existence
+        # Validar existencia
         if not os.path.exists(filepath):
             return "El archivo que encontré antes ya no existe."
             
         if ftype == 'log' or ftype == 'doc' or ftype == 'image':
-            # Emit SocketIO event to Web Client via WebAdmin (need a way to trigger it)
-            # NeoCore should handle the emission logic via sysadmin or web_admin module linkage
-            # For now, we return a special string or call a hook.
-            # Assuming self.core.web_admin_manager exists or similar.
+            # Emitir evento SocketIO a Cliente Web vía WebAdmin (necesitamos una forma de dispararlo)
+            # NeoCore debería manejar la lógica de emisión a través de la vinculación del módulo sysadmin o web_admin
+            # Por ahora, devolvemos una cadena especial o llamamos a un gancho.
+            # Asumiendo que existe self.core.web_admin_manager o similar.
             
-            # We need to construct the URL. 
-            # URL = /api/viewer/serve?path=filepath (Base64 encoded)
+            # Necesitamos construir la URL. 
+            # URL = /api/viewer/serve?path=filepath (Codificada en Base64)
             import base64
             encoded_path = base64.urlsafe_b64encode(filepath.encode()).decode()
             url = f"/api/viewer/serve/{encoded_path}"
             
-            # Emit event
+            # Emitir evento
             if self.core.web_server:
                 self.core.web_server.socketio.emit('visual:show', {'url': url, 'type': ftype, 'filename': os.path.basename(filepath)})
                 return f"Mostrando {os.path.basename(filepath)} en pantalla."
             
         elif ftype == 'audio':
-            # Play locally
-            self.core.speaker.play_clean(filepath) # Assuming speaker has this
+            # Reproducir localmente
+            self.core.speaker.play_clean(filepath) # Asumiendo que el altavoz tiene esto
             return f"Reproduciendo {os.path.basename(filepath)}."
             
         return "No puedo mostrar ese tipo de archivo."
@@ -162,7 +162,7 @@ class FinderSkill:
             try:
                 with open(self.cache_file, 'r') as f:
                     data = json.load(f)
-                    # 24h Expiry
+                    # Expiración 24h
                     if time.time() - data['timestamp'] < 86400:
                         return data
             except:
@@ -170,7 +170,7 @@ class FinderSkill:
         return None
 
     def _extract_search_term(self, text):
-        # Very naive extraction: remove "busca", "encuentra", "archivo"
+        # Extracción muy ingenua: eliminar "busca", "encuentra", "archivo"
         removals = ["busca", "búscame", "encuentra", "el", "archivo", "fichero", "llamado", "un", "una"]
         words = text.lower().split()
         cleaned = [w for w in words if w not in removals]
@@ -186,8 +186,8 @@ class FinderSkill:
 
     def _optimize_logs_for_distro(self, distro):
         """
-        Reorders sys_logs paths based on detected OS.
-        Prioritizes:
+        Reordena las rutas de sys_logs en base al SO detectado.
+        Prioriza:
         - Debian/Ubuntu: apache2, apt
         - Fedora/RHEL: httpd, dnf
         """
@@ -200,8 +200,8 @@ class FinderSkill:
             if not isinstance(paths, list): continue
             
             if is_debian:
-                # Move 'apache2' and 'apt' to the beginning
+                # Mover 'apache2' y 'apt' al principio
                 paths.sort(key=lambda p: 0 if 'apache2' in p or 'apt' in p else 1)
             elif is_rhel:
-                # Move 'httpd' and 'dnf' to the beginning
+                # Mover 'httpd' y 'dnf' al principio
                 paths.sort(key=lambda p: 0 if 'httpd' in p or 'dnf' in p or 'yum' in p else 1)
